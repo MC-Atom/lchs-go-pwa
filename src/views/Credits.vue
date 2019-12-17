@@ -5,6 +5,10 @@
     <img src="../assets/qrcode.png"/>
     <h4>Or head directly to:</h4>
     <h2>go.lciteam.club</h2>
+    <br>
+    <h4>If you want to get Lchs Go as an app on your phone,</h4>
+	<h4>Follow these istructions for iPhone:</h4>
+	<h4>Or follow these istructions for Android:</h4>
     <h5>This web app was produced by iTeam, a technology service club at LCHS.</h5>
     <div>
       <div class="credit-item-container">
@@ -34,6 +38,10 @@
       <div class="credit-item-container">
         <div class="credit-item">Ean Jeffries (ejeffries22)</div>
         <div class="credit-item-role">Core Contributor</div>
+      </div>
+      <div class="credit-item-container">
+        <div class="credit-item">Aidan Schmitigal (aschmitigal22)</div>
+        <div class="credit-item-role">Theme Designer</div>
       </div>
     </div>
   </div>

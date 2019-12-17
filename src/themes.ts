@@ -22,7 +22,12 @@ export class LCHSGoTheme {
     this.btnHoverColor = btnHoverColor;
   }
 }
-
+/***
+ *v  new LCHSGoTheme(
+ *     'theme#', 'Theme Name', 'Theme Hover Description',
+ *     ['#Colors', '#for', '#theme'], '#Now/About Buttons', '#Selected Tab Color', 'Tab Hover Color',
+ *   ),
+ **/
 export const Themes = [
   new LCHSGoTheme(
     'theme8', 'Violet Delight', '(none)',
@@ -70,7 +75,7 @@ export const Themes = [
   ),
   new LCHSGoTheme(
     'theme12', 'Dark Night', '(none)',
-    ['#30cfd0', '#330867'], '#ffffff5e', '#ffffff5e', 'rgba(71, 0, 255, 0.43)',
+    ['#30cfd0', '#330867'], '#ffff5e', '#ffff5e', 'rgba(71, 0, 255, 0.43)',
   ),
   new LCHSGoTheme(
     'theme13', 'Sweet Blend', '(none)',
@@ -87,5 +92,9 @@ export const Themes = [
   new LCHSGoTheme(
     'theme16', 'Pink', '(none)',
     ['#ff69b4', '#ff69b4'], '#ff69b4', '#ff69b4', 'rgba(255, 105, 180, 0.43)',
+  ),
+  new LCHSGoTheme(
+    'theme17', 'Rainbow Bubbles', 'Experimental',
+    ['#ffffff', '#ffffff'], 'rgba(0, 0, 0, 0.75)', 'rgba(0, 0, 0, 0.75)', 'rgba(0, 0, 0, 0.50)',
   ),
 ];

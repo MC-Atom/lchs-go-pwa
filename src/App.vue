@@ -1,19 +1,27 @@
 <template>
-  <div id="app-container" :style="getCSSColorScheme()" :class="{ toggleOff: !this.$store.state.settings.enableThemeAnimations }">
-    <div id="app">
-      <div id="nav">
-        <router-link to="/home">Now</router-link>
-        <!-- <router-link to="/today">Today</router-link> -->
-        <router-link to="/about">About</router-link>
+  <div id='app-container'>
+    <div id='theme-container' :style='getCSSColorScheme()' :class='{ toggleOff: !this.$store.state.settings.enableThemeAnimations }'> </div>
+    <div id='wrap' width='100vw' height='100vh' >
+      <canvas id='output' width='2000px' height='2000px'></canvas>
+    </div>
+    <div id='app'>
+      <div id='nav'>
+        <router-link to='/home'>Now</router-link>
+        <!-- <router-link to='/today'>Today</router-link> -->
+        <router-link to='/about'>About</router-link>
       </div>
       <keep-alive>
         <router-view/>
       </keep-alive>
     </div>
+    <div id='sources'>  
+      <img id='base' crossorigin='anonymous' width= '2000' height= '2000' src='https://cdn.glitch.com/0f517177-828e-4f09-bd56-7413c9736e48%2FXtra.png?v=1576216285048' />
+      <img id='xtra' crossorigin='anonymous' width= '2000' height= '2000' src='https://cdn.glitch.com/0f517177-828e-4f09-bd56-7413c9736e48%2Fxtra2.png?v=1576272681891' />
+    </div>
   </div>
 </template>
 
-<script lang="ts">
+<script lang='ts'>
 import { Component, Vue } from 'vue-property-decorator';
 import { Themes } from './themes';
 import { DateTime } from 'luxon';
@@ -32,9 +40,9 @@ export default class App extends Vue {
 
   getCSSColorScheme() {
     let themeGradient;
-    const currentColorScheme = this.getCurrentColorScheme();
+    var currentColorScheme = this.getCurrentColorScheme();
     if (this.$store.state.settings.colorTheme === 'theme15') {
-      const currentDate = DateTime.local().setZone('America/Los_Angeles');
+      var currentDate = DateTime.local().setZone('America/Los_Angeles');
       if (currentDate.hour >= 21 && currentDate.hour <= 4) {
         themeGradient = this.getColorSchemeFromId('theme12');
       } else if (currentDate.hour <= 9) {
@@ -43,14 +51,20 @@ export default class App extends Vue {
         themeGradient = this.getColorSchemeFromId('theme4');
       } else if (currentDate.hour <= 15) {
         themeGradient = this.getColorSchemeFromId('theme6');
+        console.log('Theme 6');
       } else if (currentDate.hour <= 17) {
         themeGradient = this.getColorSchemeFromId('theme7');
       } else {
         themeGradient = this.getColorSchemeFromId('theme1');
       }
     }
+    else if (this.$store.state.settings.colorTheme === 'theme17') {
+        document.getElementById('wrap').style.display = 'inline';
+        console.log('Theme 17');
+    }
     else {
       themeGradient = currentColorScheme;
+      // document.getElementById('wrap').style.display = 'none';
     }
     return {
       '--gradient-colors': themeGradient.gradientColors.join(', '),
@@ -74,10 +88,168 @@ let firebaseConfig = {
   };
   // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+
+// -----------------------------------------------BUbbles
+var imgWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+var imgHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+// This is dead simple, just heavily-commented!
+
+// Some varants to tweak.
+var NUM_CIRCLES = 80;
+var MIN_SIZE = 50;
+var MAX_SIZE = 200;
+
+// Returns a random int between two numbers.
+function getRndInt(min, max) {
+ 
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+ 
+}
+
+// Cache refs to our canvas, context and images.
+var c = document.getElementById('output');
+var ctx = c.getContext('2d');
+var sources = document.getElementById('sources');
+var imgBase = document.getElementById('base');
+var imgXtra = document.getElementById('xtra');
+
+// Timestamp var used in the update-render loop.
+let t = 0x0;
+
+/**
+ * An object 'class' to describe a circle which animates
+ * its size (radius) and which can randomize its position.
+ **/
+var Circle = {
+    x: 0,
+    y: 0,
+    size: 0,
+    _needsRandomized: false,
+
+    /**
+     * Set a random position and max size
+     **/
+    randomize: function() {
+        this.x = getRndInt(50, c.width - 50);
+        this.y = getRndInt(50, c.height - 50);
+        this.maxSize = getRndInt(MIN_SIZE, MAX_SIZE);
+    },
+
+    /**
+     * Animates the size up and down via a sine calculation against a passed-in
+     * timestamp factorial.  (See the main program update() method).
+     * Accepts an offset so different instances will animate out-of-sync
+     * (if ofs was 0 for all instances, they would synchronize).
+     * When the circle is fully-shrunk, it randomizes its position and max size.
+     **/
+    update: function(t, ofs) {
+        this.size = Math.abs(Math.round(Math.sin(t + ofs) * this.maxSize));
+
+        if (this.size < 2) {
+            if (this._needsRandomized) {
+                this.randomize();
+                this._needsRandomized = false;
+            }
+        } else {
+            this._needsRandomized = true;
+        }
+    },
+
+    /**
+     * Draws a circle to the context at the current position and size.
+     * NOTE: this doesn't open or close a path, or apply a fill or stroke.
+     * It assumes a path has already been opened in the context.
+     * (See main program render() method)
+     **/
+    draw: function() {
+        ctx.moveTo(this.x, this.y);
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+    }
+};
+
+/**
+ *
+ * MAIN PROGRAM
+ *
+ **/
+
+// Create multiple Circle instances in an array.
+var circles = [];
+for (var i = 0; i < NUM_CIRCLES; i++) {
+    var circle = Object.create(Circle);
+    circle.randomize();
+    circles.push(circle);
+}
+
+/**
+ * Tell each mask to update itself.  Pass in the current time
+ * and an offset integer so the animations do not synchronize.
+ **/
+function update() {
+    t = 0.001 * Date.now();
+    circles.forEach(function(circle, idx) {
+        circle.update(t, idx);
+    });
+}
+
+/**
+ * Main render method.
+ * NOTE: we could have the Circle class drawing its own clip path and
+ * image, but for performance reasons we do the main rendering here.
+ * So we have one clip path created from multiple circles, instead of 
+ * multiple clip paths (and image renders) per frame.
+ **/
+function render() {
+    // Draw the background first.
+    // Since this will cover everything from the last frame, 
+    // there's no need for an explicit 'clear the canvas' step.
+    ctx.drawImage(imgBase, 0, 0, imgWidth, imgHeight);
+
+    // Save the state (before any clip regions exist),
+    // and begin a new path.
+    ctx.save();
+    ctx.beginPath();
+
+    // Draw each Circle instance, at its current position
+    // and size, into the open path.
+    // (Note that nothing gets visibly 'drawn' here - we're 
+    // just defining the shape of the path.)
+    circles.forEach(function(circle) {
+        circle.draw();
+    });
+
+    // Close the path and flag it as a clipping region
+    // for any subsequent drawing.
+    ctx.closePath();
+    ctx.clip();
+
+    // Draw the 'I Am The Night' image, which will be clipped
+    // by our path, so it is drawn 'into' the circles.
+    ctx.drawImage(imgXtra, 0, 0, imgWidth, imgHeight);
+
+    // Restore the pre-clip state, so that no further
+    // clipping will occur.  Otherwise, the bg
+    // would get clipped when we draw it next frame.
+    ctx.restore();
+}
+
+// Main update-render loop.
+function loop() {
+    requestAnimationFrame(loop);
+    update();
+    render();
+}
+
+// Kick it off when our images are fully loaded.
+imagesLoaded(sources, function() {
+    console.log('Images Loaded');
+    loop();
+});
+
 </script>
 
 
-<style lang="scss">
+<style lang='scss'>
 
 @keyframes AnimatedTheme {
   0% { background-position: 50% 0%; }
@@ -85,18 +257,27 @@ firebase.initializeApp(firebaseConfig);
   100% { background-position: 50% 0%; }
 }
 
-
-html, body, #app-container {
+html, body, #app-container, #theme-container {
   height: auto;
   min-height: 100vh;
   width: 100%;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
-#app-container {
-  background: linear-gradient(to bottom, var(--gradient-colors, "#42b983, #2f9768"));
+#theme-container {
+  z-index: -10;
+  position:fixed;
+  top: 0px;
+  left: 0px;
+  bottom: auto;
+  right: auto;
+  overflow: hidden;
+
+  background: linear-gradient(to bottom, var(--gradient-colors, '#42b983, #2f9768'));
   background-size: 400% 400%;
   animation: AnimatedTheme 20s ease infinite;
 
@@ -105,6 +286,22 @@ html, body, #app-container {
     animation: none;
   }
 }
+
+#wrap {
+  z-index: -8;
+  position:fixed;
+  top: 0px;
+  left: 0px;
+  bottom: auto;
+  right: auto;
+  overflow: hidden;
+  display: none;
+}
+
+#sources {
+	display: none;
+}
+
 #app {
   font-family: 'Niramit', Avenir, sans-serif;
   -webkit-font-smoothing: antialiased;

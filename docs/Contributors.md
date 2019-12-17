@@ -32,3 +32,7 @@
 ### Ean Jeffries
 * Core Contributor
 ## 
+
+### Aidan Schmitigal
+* Theme Designer
+## 
